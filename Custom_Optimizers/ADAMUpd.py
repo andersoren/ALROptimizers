@@ -1,15 +1,10 @@
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 import torch
-from torch.optim import Optimizer
-from .optimizer import (Optimizer, ParamsT, _use_grad_for_differentiable, _get_value,
-                        _stack_if_compiling, _dispatch_sqrt, _default_to_fused_or_foreach,
-                        _get_scalar_dtype, _capturable_doc, _differentiable_doc, _foreach_doc,
-                        _fused_doc, _maximize_doc, _view_as_real)
-from typing import List, Optional
 from torch import Tensor
-import copy
+from torch.optim import Optimizer
+from torch.optim.optimizer import _get_value, _dispatch_sqrt, _get_scalar_dtype
+from typing import List, Optional, Union, Tuple
 import functools
 
 #### This is used as a decorator (I am not quite sure what this is) on the step() method in the custom optimizer
@@ -43,12 +38,55 @@ def _use_grad_for_differentiable(func):
 
 def adam_update(params: List[Tensor],
         grad_list: List[Tensor],
-        step_sizes: List[Tensor]):
+        step_sizes: List[Tensor],
+        exp_avgs: List[Tensor],
+        exp_avg_sqs: List[Tensor],
+        max_exp_avg_sqs: List[Tensor],
+        state_steps: List[Tensor],
+        amsgrad: bool,
+        beta1: float,
+        beta2: float,
+        weight_decay: float,
+        eps: float):
+
         for i, param in enumerate(params):
             step_size = step_sizes[i]
             grad = grad_list[i]
+            exp_avg = exp_avgs[i]
+            exp_avg_sq = exp_avg_sqs[i]
+            step_t = state_steps[i]
 
-            param.addcmul_(grad.sign(), step_size, value=-1)  # Update weights using individual learning rates and sign of gradient
+            step_t += 1
+
+            if weight_decay != 0:
+                grad = grad.add(param, alpha=weight_decay)
+            
+            exp_avg.lerp_(grad, 1 - beta1)
+            exp_avg_sq.mul_(beta2).addcmul_(grad, grad.conj(), value=1 - beta2)
+
+            step = _get_value(step_t)
+
+            bias_correction1 = 1 - beta1 ** step
+            bias_correction2 = 1 - beta2 ** step
+
+            step_size = step_size / bias_correction1
+
+            bias_correction2_sqrt = _dispatch_sqrt(bias_correction2)
+
+            if amsgrad:
+                # Maintains the maximum of all 2nd moment running avg. till now
+                torch.maximum(max_exp_avg_sqs[i], exp_avg_sq, out=max_exp_avg_sqs[i])
+
+                # Use the max. for normalizing running avg. of gradient
+                denom = (max_exp_avg_sqs[i].sqrt() / bias_correction2_sqrt).add_(eps)
+            else:
+                denom = (exp_avg_sq.sqrt() / bias_correction2_sqrt).add_(eps)
+
+            # Cannot use following PyTorch line because value must be a scalar
+            # param.addcdiv_(exp_avg, denom, value=-step_size)
+            # Use different in-place operation instead
+            update = -step_size*exp_avg/denom
+            param.add_(update, alpha=1)
 
 def lr_update(params: List[Tensor],
     weights1: Tensor,
@@ -65,7 +103,7 @@ def lr_update(params: List[Tensor],
         if param.grad is None:
             continue
         step_size = step_sizes[i]
-        dw_epochA = w2.data-w1.data  #  Calculate first differene in weights
+        dw_epochA = w2.data-w1.data  #  Calculate first difference in weights
         dw_epochB = w3.data-w2.data   # Calculate second difference in weights
         if differentiable:
             signs = dw_epochA.mul(dw_epochB.clone()).sign()
@@ -91,8 +129,9 @@ def Clone_Parameters(model_parameters):
 
 #### Define the custom optimizer
 class ADAMUPD(Optimizer):
-    def __init__(self, params: ParamsT, lr: Union[float, Tensor] = 1e-3, betas: Tuple[float, float] = (0.9, 0.999),
-                 eps: float = 1e-8, weight_decay: float = 0, amsgrad: bool = False, *, differentiable: bool = False):
+    def __init__(self, params, lr: Union[float, Tensor] = 1e-3, M=1, L=1, betas: Tuple[float, float] = (0.9, 0.999),
+                 etas=(0.5, 1.2), lr_limits=(1e-6, 50), eps: float = 1e-8, weight_decay: float = 0, amsgrad: bool = False, *,
+                 differentiable: bool = False):
         if not 0.0 <= lr:
             raise ValueError(f"Invalid learning rate: {lr}")
         if not 0.0 <= eps:
@@ -104,8 +143,8 @@ class ADAMUPD(Optimizer):
         if not 0.0 <= weight_decay:
             raise ValueError(f"Invalid weight_decay value: {weight_decay}")
 
-        defaults = dict(lr=lr, betas=betas, eps=eps,
-                        weight_decay=weight_decay, amsgrad=amsgrad,
+        defaults = dict(lr=lr, betas=betas,lr_limits=lr_limits, etas=etas, M=M, L=L, 
+                        eps=eps, weight_decay=weight_decay, amsgrad=amsgrad,
                         differentiable=differentiable)
         super().__init__(params, defaults)
     #### Giving the class attributes that can be accessed later to update learning rates
@@ -141,7 +180,6 @@ class ADAMUPD(Optimizer):
         exp_avg_sqs = []
         max_exp_avg_sqs = []
         state_steps = []
-        beta1, beta2 = group['betas']
 
         #### PyTorch has in-built parameter groups which allow you to change hyperparameters for different layers
         #### In this case all parameters in same group
@@ -186,7 +224,12 @@ class ADAMUPD(Optimizer):
                 self.weights1 = Clone_Parameters(group["params"])   # Save network parameters
                 self.lr_counter += 1
             
-            adam_update(params_with_grad, grad_list, self.step_sizes)  # Update weights, everytime
+            # Carry out Adam weight and learning rate update
+            beta1, beta2 = group['betas']
+            weight_decay, amsgrad, eps = group['weight_decay'], group['amsgrad'], group['eps']
+            adam_update(params_with_grad, grad_list, self.step_sizes, exp_avgs, exp_avg_sqs, 
+                        max_exp_avg_sqs, state_steps, amsgrad, beta1, beta2, weight_decay, eps)
+            
             self.data_tally += M   # Add weight mini-batch size to data seen, everytime
             
             if self.data_tally % L == 0 and self.lr_counter == 1:  # Second iteration of lr-update
@@ -195,7 +238,7 @@ class ADAMUPD(Optimizer):
                 
             elif self.data_tally % L == 0 and self.lr_counter >= 2: # Third iteration of lr-update
                 etaminus, etaplus = group["etas"]
-                step_size_min, step_size_max = group["step_sizes"]
+                step_size_min, step_size_max = group["lr_limits"]
                 self.weights3 = Clone_Parameters(group["params"])   # Save network parameters
                 lr_update(group["params"], self.weights1, self.weights2, self.weights3, self.step_sizes, \
                                  step_size_min, step_size_max, etaminus, etaplus)

@@ -86,8 +86,8 @@ def Clone_Parameters(model_parameters):
     return Param_list
 
 #### Define the custom optimizer
-class SRPROP(Optimizer):
-    def __init__(self, params, M=1, L=1, lr=1e-2, etas=(0.5, 1.2), step_sizes=(1e-6, 50),
+class SGDUPD(Optimizer):
+    def __init__(self, params, M=1, L=1, lr=1e-2, etas=(0.5, 1.2), lr_limits=(1e-6, 50),
                  *, differentiable: bool = False, ):
             if not 0.0 <= lr:
                 raise ValueError(f"Invalid learning rate: {lr}")
@@ -103,10 +103,10 @@ class SRPROP(Optimizer):
             L=L,
             lr=lr,
             etas=etas,
-            step_sizes=step_sizes,
+            lr_limits=lr_limits,
             differentiable=differentiable,)
         #### super() makes the class inherit properties from PyTorch's Optimizer class
-            super(SRPROP, self).__init__(params, defaults)
+            super().__init__(params, defaults)
         #### Giving the class attributes that can be accessed later to update learning rates
             self.step_sizes = []  # Initialize step_sizes attribute
             self.lr_counter = 0  # Counts learning rate updates
@@ -117,7 +117,7 @@ class SRPROP(Optimizer):
         
     #### Needed for the decorator
     def __setstate__(self, state):
-        super(SRPROP, self).__setstate__(state)
+        super().__setstate__(state)
         for group in self.param_groups:
             group.setdefault("differentiable", False)
     
@@ -175,7 +175,7 @@ class SRPROP(Optimizer):
                 
             elif self.data_tally % L == 0 and self.lr_counter >= 2: # Third iteration of lr-update
                 etaminus, etaplus = group["etas"]
-                step_size_min, step_size_max = group["step_sizes"]
+                step_size_min, step_size_max = group["lr_limits"]
                 self.weights3 = Clone_Parameters(group["params"])   # Save network parameters
                 lr_update(group["params"], self.weights1, self.weights2, self.weights3, self.step_sizes, \
                                  step_size_min, step_size_max, etaminus, etaplus)
