@@ -33,4 +33,10 @@ In Table 1, the S-Rprop and vanilla SGD results are taken from Andersen (2024). 
 
 *Table 1: Best runs for each optimizer. Mean is presented with standard deviation for 5 runs and the epoch at which minimum loss was reached. 5 epochs of training was used with the MNIST dataset.*
 
-The following are plots of the training progress over 5 epochs:
+The following are plots of the runs presented in Table 1. On the left is the progression of loss over the entire 5 epochs of training. On the right is a narrowed window showing 4-5 epochs where all algorithms reach their respective values of minimal loss. The S-Rprop and SGD results have been left as they do not reach the same performance level as these algorithms.
+
+<p float="left">
+  <img src="./images/Updated%20Algos%20Benchmark%20Speeds.png" title="Image 1" width="500" />
+  <img src="./images/Updated%20Algos%20Benchmark.png" title="Image 1" width="500" /> 
+</p>
+
