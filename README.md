@@ -34,14 +34,17 @@ The grid-search values were:
 
 In Table 1, the S-Rprop and vanilla SGD results are taken from Andersen (2024). (Explain more in-depth the hyper-parameter process here).
 
-| Algorithm  | Best H-P pair $(L, M, Lr)$ | Min Loss $\mu$ | S.D. $\sigma$ | Min. Loss Epoch |
-|----------|-----------------------------|------------------|---------------|------------------|
+| Algorithm  | Best H-P pair $(L, M, Lr)$  | Min Loss $\mu$   | S.D. $\sigma$ | Min. Loss Epoch  |
+|------------|-----------------------------|------------------|---------------|------------------|
 | S-Rprop    | $30000, 600, 10^{-3}$       | $0.025$          | $0.003$       |                  |
 | SGD        | $N/A, 5, 10^{-3}$           | $0.027$          | $0.005$       |                  |
 | SGD+M      | $N/A, 25, 10^{-2}$          | $0.013$          | $0.001$       | $5$              |
 | SGD-Upd    | $15000, 25, 10^{-1}$        | $0.008$          | $0.001$       | $5$              |
+| SGD-Sch    |                             |                  |               |                  |
 | Adam-Upd   | $12000, 25, 10^{-3}$        | $\mathbf{0.007}$ | $0.001$       | $5$              |
 | Adam       | $N/A, 25, 10^{-3}$          | $0.013$          | $0.001$       | $4$              |
+| Adam-Sch   | $N/A, 5, 10^{-3}            | $0.003$          |  $0.000$      | $5$              |
+
 
 *Table 1: Best runs for each optimizer. Mean is presented with standard deviation for 5 runs and the epoch at which minimum loss was reached. 5 epochs of training was used with the MNIST dataset.*
 
