@@ -25,6 +25,13 @@ These new algorithms, called *SGD-updated* and *Adam-updated* (names can be impr
 
 For all algorithms a wandb [sweep](https://docs.wandb.ai/guides/sweeps) was performed with the Bayesian optimization method. Sweeps allow for an intuitive and insightful representation of hyper-parameter relationships. For some algorithms, this revealed clear preferences in terms of hyper-paramter combinations, and this was followed up by a grid-search over a smaller area. For others, Bayesian optimization did not explore the entire parameter space (this method scales poorly) and thus a grid-search was used over a larger area.
 During the grid-search, 5 runs were made for each hyper-parameter combination and the loss mean of each point was used to find optimal hyper-parameters giving minimal loss.
+
+The grid-search values were:
+- `SGD+M`, `lr = [0.0001, 0.001, 0.01, 0.1], M = [5, 25, 100]`.
+- `SGD-Upd`, `lr = [0.01, 0.1], L = [3000, 6000, 15000], M = [25, 100, 500]`.
+- `Adam-Upd`, `lr = [0.0001, 0.001, 0.01], L = [3000, 6000, 15000], M = [25, 100, 500]`.
+- `Adam`, `lr = [0.0001, 0.001, 0.01], M = [5, 25, 100, 500]`.
+
 In Table 1, the S-Rprop and vanilla SGD results are taken from Andersen (2024). (Explain more in-depth the hyper-parameter process here).
 
 | Algorithm  | Best H-P pair $(L, M, Lr)$ | Min Loss $\mu$ | S.D. $\sigma$ | Min. Loss Epoch |
