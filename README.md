@@ -15,7 +15,7 @@ The current goals are to:
 
 ## Implementing Adaptive Learning-Rate Scheme for SGD & Adam
 
-The SGD and Adam algorithms, available as open-source code from the [PyTorch website](https://pytorch.org/docs/stable/optim.html), were modified to make use of the adaptive learning-rate scheme explained in [Andersen, 2024].
+The SGD and Adam algorithms, available as open-source code from the [PyTorch website](https://pytorch.org/docs/stable/optim.html), were modified to make use of the adaptive learning-rate scheme explained in [Andersen, 2024]. These are available in the Custom Optimizers folder as SGDUpd and AdamUpd, alongside S-Rprop.
 
 ## Benchmarking New Algorithms
 
