@@ -42,7 +42,7 @@ In Table 1, the S-Rprop and vanilla SGD results are taken from Andersen (2024). 
 | SGD+M-Sch  | $N/A, 25, 10^{-2}$          | $0.005$          | $0.001$       | $5$              |
 | SGD-Upd    | $15000, 25, 10^{-1}$        | $0.008$          | $0.001$       | $5$              |
 | Adam       | $N/A, 25, 10^{-3}$          | $0.013$          | $0.001$       | $4$              |
-| Adam-Sch   | $N/A, 5, 10^{-3}            | $\mathbf{0.003}$          | $0.000$       | $5$              |
+| Adam-Sch   | $N/A, 5, 10^{-3}$            | $\mathbf{0.003}$          | $0.000$       | $5$              |
 | Adam-Upd   | $15000, 5, 10^{-3}$        | $0.004$ | $0.000$       | $5$              |
 
 
