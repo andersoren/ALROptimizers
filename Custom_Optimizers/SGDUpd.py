@@ -79,6 +79,14 @@ def lr_update(params: List[Tensor],
         restore[signs.eq(etaminus)] = 1                           # tracks which weights had gradient set to zero --> 1 otherwise 0
         param.data.addcmul_(dw_epochB.detach(), restore, value=-1)    # reverts tracked weights back to w2
 
+def get_lr_stats(step_sizes: List[Tensor], lr_mean: List, lr_std: List, track_lr: bool=False,):
+    if track_lr:
+        single_tensor = torch.cat([x.flatten() for x in step_sizes])
+        lr_mean.append(single_tensor.mean().item())
+        lr_std.append(single_tensor.std().item())
+    else:
+        pass
+
 def Clone_Parameters(model_parameters):
     Param_list = []
     for p in model_parameters:
@@ -88,7 +96,7 @@ def Clone_Parameters(model_parameters):
 #### Define the custom optimizer
 class SGDUPD(Optimizer):
     def __init__(self, params, M=1, L=1, lr=1e-2, etas=(0.5, 1.2), lr_limits=(1e-6, 50),
-                 *, differentiable: bool = False, ):
+                 *, track_lr: bool = False, differentiable: bool = False, ):
             if not 0.0 <= lr:
                 raise ValueError(f"Invalid learning rate: {lr}")
             if not 0.0 < etas[0] < 1.0 < etas[1]:
@@ -98,13 +106,8 @@ class SGDUPD(Optimizer):
             if not L%M==0:
                 raise ValueError(f"L={L} must be integer multiple of M={M}")
         #### Make hyperparameters accessible through a dictionary
-            defaults = dict(
-            M=M,
-            L=L,
-            lr=lr,
-            etas=etas,
-            lr_limits=lr_limits,
-            differentiable=differentiable,)
+            defaults = dict(M=M, L=L, lr=lr, etas=etas, lr_limits=lr_limits,
+                            differentiable=differentiable, track_lr=track_lr)
         #### super() makes the class inherit properties from PyTorch's Optimizer class
             super().__init__(params, defaults)
         #### Giving the class attributes that can be accessed later to update learning rates
@@ -114,6 +117,7 @@ class SGDUPD(Optimizer):
             self.weights1 = []  # Used in step-size update
             self.weights2 = []  # Used in step-size update
             self.weights3 = []  # Used in step-size update
+            self.lr_mean, self.lr_std = [], []
         
     #### Needed for the decorator
     def __setstate__(self, state):
@@ -164,6 +168,7 @@ class SGDUPD(Optimizer):
             
             if self.data_tally % L == 0 and self.lr_counter == 0:  # First iteration of lr-update on first call
                 self.weights1 = Clone_Parameters(group["params"])   # Save network parameters
+                get_lr_stats(self.step_sizes, self.lr_mean, self.lr_std, group["track_lr"])
                 self.lr_counter += 1
             
             weight_update(params_with_grad, grad_list, self.step_sizes)  # Update weights, everytime
@@ -171,6 +176,7 @@ class SGDUPD(Optimizer):
             
             if self.data_tally % L == 0 and self.lr_counter == 1:  # Second iteration of lr-update
                 self.weights2 = Clone_Parameters(group["params"])   # Save network parameters
+                get_lr_stats(self.step_sizes, self.lr_mean, self.lr_std, group["track_lr"])
                 self.lr_counter += 1
                 
             elif self.data_tally % L == 0 and self.lr_counter >= 2: # Third iteration of lr-update
@@ -179,6 +185,7 @@ class SGDUPD(Optimizer):
                 self.weights3 = Clone_Parameters(group["params"])   # Save network parameters
                 lr_update(group["params"], self.weights1, self.weights2, self.weights3, self.step_sizes, \
                                  step_size_min, step_size_max, etaminus, etaplus)
+                get_lr_stats(self.step_sizes, self.lr_mean, self.lr_std, group["track_lr"]) # Tracking lr updates for debugging
                 self.weights3 = Clone_Parameters(group["params"])
                 for i in range(len(self.weights1)):
                     self.weights1[i] = self.weights2[i].detach().clone()
