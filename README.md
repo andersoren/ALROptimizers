@@ -68,6 +68,10 @@ The training progress for these runs occured at an almost identical pace to the 
 ## Validating models
 The optimal set of hyper-parameters was taken for each optimization method in Table 1 and Table 2 above, and each model was validated on the MNIST validation dataset of 10,000 patterns after every 3,000 patterns were used for training.
 
-<img title="Training Loss" alt="Alt text" src="./images/Training%20Loss.png" width="500"> 
-<img title="Validation Loss" alt="Alt text" src="./images/Validation%20Loss.png width="500">
+<p float="left">
+  <img title="Validation Loss" alt="Alt text" src="./images/Validation%20Loss.png" width="500">
+  <img title="Training Loss" alt="Alt text" src="./images/Training%20Loss.png" width="500"> 
+</p>
 <img title="Validation accuracy" alt="Alt text" src="./images/Validation%20accuracy.png" width="500">
+
+S-Rprop has slower learning due to its large mini-batch size slowing down training.
