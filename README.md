@@ -48,8 +48,8 @@ In Table 1, the S-Rprop and vanilla SGD results are taken from Andersen (2024). 
 The following are plots of the runs presented in Table 1. On the left is the progression of loss over the entire 5 epochs of training. On the right is a narrowed window showing 4-5 epochs where all algorithms reach their respective values of minimal loss. The S-Rprop and SGD results have been left as they do not reach the same performance level as these algorithms.
 
 <p float="left">
-  <img src="./images/Updated%20Algos%20Benchmark%20Speeds.png" alt="Image 1" width="500" />
-  <img src="./images/Updated%20Algos%20Benchmark.png" alt="Image 1" width="500" /> 
+  <img src="./images/Updated%20Algos%20Benchmark%20Speeds.png" alt="Image 1" width="450" />
+  <img src="./images/Updated%20Algos%20Benchmark.png" alt="Image 1" width="450" /> 
 </p>
 
 ### Learning-rate scheduling
@@ -65,4 +65,13 @@ These were evaluated with a grid-search using the same grid-searches as above, f
 
 The training progress for these runs occured at an almost identical pace to the results in Table 1, as shown in Figure 1.
 
+## Validating models
+The optimal set of hyper-parameters was taken for each optimization method in Table 1 and Table 2 above, and each model was validated on the MNIST validation dataset of 10,000 patterns after every 3,000 patterns were used for training.
 
+<p float="left">
+  <img title="Validation Loss" alt="Alt text" src="./images/Validation%20Loss.png" width="500">
+  <img title="Training Loss" alt="Alt text" src="./images/Training%20Loss.png" width="500"> 
+</p>
+<img title="Validation accuracy" alt="Alt text" src="./images/Validation%20accuracy.png" width="500">
+
+S-Rprop has slower learning due to its large mini-batch size slowing down training.
