@@ -9,11 +9,13 @@ from torchvision import datasets, transforms
 import torch.nn.functional as F
 from tqdm import trange, tqdm
 import wandb
+import random
+
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 wandb.login()
 
-random_seed = 3
+random_seed = random.randint(0, 2**32 - 1)
 torch.manual_seed(random_seed)
 
 eta_m, eta_p = 0.5, 1.2   
@@ -161,7 +163,7 @@ test_batch_size = 5000
 for learning_rate in learning_rates:
     for minibatch_size in minibatch_sizes:
             config = {"epochs": 5,
-                    "optimizer": "Adam-Sch",
+                    "optimizer": "SGD",
                     "learning_rate": learning_rate,
                     "minibatch_size": minibatch_size,
                     "lr_batch_size": lr_batch_size,
