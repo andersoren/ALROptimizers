@@ -75,3 +75,23 @@ The optimal set of hyper-parameters was taken for each optimization method in Ta
 <img title="Validation accuracy" alt="Alt text" src="./images/Validation%20accuracy.png" width="500">
 
 S-Rprop has slower learning due to its large mini-batch size slowing down training.
+
+## Larger dataset: CIFAR-100 with ResNet9
+
+All the performances above give an accuracy of 98-99% and therefore MNIST is too simple of a dataset to properly evaluate the differences between the different algorithms. We thus use [CIFAR-100](https://www.cs.toronto.edu/~kriz/cifar.html) instead, which consists of 50000 training images, each pertaining to 1 of 100 classes with 500 images per class, and 10000 images for validation.
+The image sizes are 32x32x3 (RGB).
+
+It was first attempted to reproduce the results in Figure 4 of the paper [The Road Less Scheduled](https://arxiv.org/abs/2405.15682) which uses a variation of DenseNet121 to reach 79% validation accuracy. The DenseNet used to attempt to reproduce this result is provided in the Custom_Optimizers folder, densetnet.py. The suspected reason for this is the kernel size for the pre-processing convolutional layer is 7x7, which is made for ImageNet, and likely too large for CIFAR 32x32 images. The code was run with bn_size=1 which removes bottleneck layers and the code was edited to change the compression factor from 0.5 to 1, removing compression. This is equivalent to DenseNet as opposed to DenseNet-BC (see [Densely Connected Convolutional Networks](https://arxiv.org/abs/1608.06993).
+
+We moved on to a simpler architecture: ResNet9 (Residual Network with 9 layers). The code is provided in resnet9.py and a visualisation of the architecture is in the images folder.
+
+
+### Learning-rate tracking
+A learning-rate tracking functionality was added to the custom optimizers using optimizer class attributes 'lr_mean' and 'lr_std' which are calculated at every iteration of L minibatches, and the iteration of L minibatches is tracked using attribute 'lr_counter'. This enables plotting of the learning-rate mean and standard deviation throughout training. It is activated with an argument: 'track_lr=True' when declaring the optimizer. Unfortunately the standard deviation cannot be automatically added as the standard deviation for the mean plot in wandb. Therefore we do this manually by exporting raw data from wandb as a CSV file and plotting mean with standard deviation in a separate py document.
+
+### Testing
+The [best run with Adam](https://jovian.com/tessdja/resnet-practice-cifar100-resnet) using gradient clippping, weight decay and a OneCycleLR schedule gives 74% validation accuracy, which is taken as the performance benchmark of ResNet9.
+
+For algorithms with the Rprop learning-rate update scheme, hyper-parameters were changed to $\eta^{-}$ = 0.7375, $\eta^[+} = 1.2 $, $\Delta_{min} = 1e-6, \Delta_{max} = 0.01$ following best values found for a wide range of problems in [this paper by Eckohoff & Reiher (2023)](https://www.researchgate.net/publication/377486837_CoRe_Optimizer_An_All-in-One_Solution_for_Machine_Learning).
+
+(Report results here)
