@@ -92,6 +92,8 @@ A learning-rate tracking functionality was added to the custom optimizers using 
 ### Testing
 The [best run with Adam](https://jovian.com/tessdja/resnet-practice-cifar100-resnet) using gradient clippping, weight decay and a OneCycleLR schedule gives 74% validation accuracy, which is taken as the performance benchmark of ResNet9.
 
-For algorithms with the Rprop learning-rate update scheme, hyper-parameters were changed to $\eta^{-}$ = 0.7375, $\eta^[+} = 1.2 $, $\Delta_{min} = 1e-6, \Delta_{max} = 0.01$ following best values found for a wide range of problems in [this paper by Eckohoff & Reiher (2023)](https://www.researchgate.net/publication/377486837_CoRe_Optimizer_An_All-in-One_Solution_for_Machine_Learning).
+For algorithms with the Rprop learning-rate update scheme, hyper-parameters were changed to 
+$\eta^{-} = 0.7375, \eta^{+} = 1.2, \Delta_{min} = 10^{-6}, \Delta_{max} = 10^{-2}$
+following best values found for a wide range of problems in [this paper by Eckohoff & Reiher (2023)](https://www.researchgate.net/publication/377486837_CoRe_Optimizer_An_All-in-One_Solution_for_Machine_Learning).
 
 (Report results here)
