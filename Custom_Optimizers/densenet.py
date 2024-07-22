@@ -142,12 +142,12 @@ class DenseNet(nn.Module):
 
     def __init__(
         self,
-        growth_rate: int = 32,
+        growth_rate: int = 12,
         block_config: Tuple[int, int, int, int] = (6, 12, 24, 16),
-        num_init_features: int = 64,
-        bn_size: int = 4,
+        num_init_features: int = 16,
+        bn_size: int = 1,
         drop_rate: float = 0,
-        num_classes: int = 1000,
+        num_classes: int = 100,
         memory_efficient: bool = False,
     ) -> None:
 
@@ -155,13 +155,15 @@ class DenseNet(nn.Module):
         #_log_api_usage_once(self)
 
         # First convolution
+        # Possible reason for underperforming DenseNet runs is due to kernel size in this initial layer
+        # Change to ker=3, str=2, pad=1 for CIFAR?
         self.features = nn.Sequential(
             OrderedDict(
                 [
                     ("conv0", nn.Conv2d(3, num_init_features, kernel_size=7, stride=2, padding=3, bias=False)),
                     ("norm0", nn.BatchNorm2d(num_init_features)),
                     ("relu0", nn.ReLU(inplace=True)),
-                    ("pool0", nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
+                    ("pool0", nn.MaxPool2d(kernel_size=3, stride=1, padding=1)),
                 ]
             )
         )
@@ -180,8 +182,9 @@ class DenseNet(nn.Module):
             self.features.add_module("denseblock%d" % (i + 1), block)
             num_features = num_features + num_layers * growth_rate
             if i != len(block_config) - 1:
-                trans = _Transition(num_input_features=num_features, num_output_features=num_features)
+                trans = _Transition(num_input_features=num_features, num_output_features=num_features) #, num_features=num_features//2
                 self.features.add_module("transition%d" % (i + 1), trans)
+                # num_features=num_features//2
 
         # Final batch norm
         self.features.add_module("norm5", nn.BatchNorm2d(num_features))
