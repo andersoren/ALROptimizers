@@ -85,15 +85,23 @@ It was first attempted to reproduce the results in Figure 4 of the paper [The Ro
 
 We moved on to a simpler architecture: ResNet9 (Residual Network with 9 layers). The code is provided in resnet9.py and a visualisation of the architecture is in the images folder.
 
-
-### Learning-rate tracking
-A learning-rate tracking functionality was added to the custom optimizers using optimizer class attributes 'lr_mean' and 'lr_std' which are calculated at every iteration of L minibatches, and the iteration of L minibatches is tracked using attribute 'lr_counter'. This enables plotting of the learning-rate mean and standard deviation throughout training. It is activated with an argument: 'track_lr=True' when declaring the optimizer. Unfortunately the standard deviation cannot be automatically added as the standard deviation for the mean plot in wandb. Therefore we do this manually by exporting raw data from wandb as a CSV file and plotting mean with standard deviation in a separate py document.
-
 ### Testing
-The [best run with Adam](https://jovian.com/tessdja/resnet-practice-cifar100-resnet) using gradient clippping, weight decay and a OneCycleLR schedule gives 74% validation accuracy, which is taken as the performance benchmark of ResNet9.
+The [best run with Adam](https://jovian.com/tessdja/resnet-practice-cifar100-resnet) using gradient clippping, weight decay and a OneCycleLR schedule gives 74% validation accuracy, which is taken as the performance benchmark of ResNet9 for this dataset.
 
 For algorithms with the Rprop learning-rate update scheme, hyper-parameters were changed to 
-$\eta^{-} = 0.7375, \eta^{+} = 1.2, \Delta_{min} = 10^{-6}, \Delta_{max} = 10^{-2}$
+$\eta^{-} = 0.7375, \eta^{+} = 1.2, \Delta_{min} = 10^{-6}, \Delta_{max} = 10^{-2}.$
+The effect of these changes can be seen in the following plots:
+
+<p float="left">
+  <img title="Validation Loss" alt="Alt text" src="./images/Validation%20Loss.png" width="500">
+  <img title="Training Loss" alt="Alt text" src="./images/Training%20Loss.png" width="500"> 
+</p>
+<img title="Validation accuracy" alt="Alt text" src="./images/Validation%20accuracy.png" width="500">
+
 following best values found for a wide range of problems in [this paper by Eckohoff & Reiher (2023)](https://www.researchgate.net/publication/377486837_CoRe_Optimizer_An_All-in-One_Solution_for_Machine_Learning).
 
 (Report results here)
+
+
+### Learning-rate tracking
+A learning-rate tracking functionality was added to the custom optimizers using optimizer class attributes 'lr_mean' and 'lr_std' which are calculated at every iteration of L minibatches, and the iteration of L minibatches is tracked using attribute 'lr_counter'. This enables plotting of the learning-rate mean and standard deviation throughout training. It is activated with an argument: 'track_lr=True' when declaring the optimizer. Unfortunately the standard deviation cannot be automatically added as the standard deviation for the mean plot in wandb. Therefore we do this manually by exporting raw data from wandb as a CSV file and plotting mean with standard deviation in a separate py document.
