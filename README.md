@@ -106,20 +106,33 @@ These plots show that $\eta^{-}, \eta^{+}, \Delta_{min}, \Delta_{max}$ could be 
 
 ### Testing
 
-The [best run with Adam](https://jovian.com/tessdja/resnet-practice-cifar100-resnet) using gradient clippping, weight decay and a OneCycleLR schedule gives 74% validation accuracy, which is taken as the performance benchmark of ResNet9 for this dataset. This result was reproduced, and Adam-Upd was tested with gradient clipping and weight-decay and a grid-search of `learning-rate = [0.0001, 0.001]`, `M minibatch = [500]`, `L-minibatch=[25000, 50000]`.
+The [best run with Adam](https://jovian.com/tessdja/resnet-practice-cifar100-resnet) using gradient clippping, weight decay and a OneCycleLR schedule gives 74% validation accuracy, which is taken as the performance benchmark of ResNet9 for this dataset. This result was reproduced, and Adam-Upd was tested with gradient clipping and weight-decay and a grid-search of `learning-rate = [0.0001, 0.001]`, `M minibatch = [500]`, `L-minibatch=[25000, 50000]`. Training lasted 50 epochs in all cases. 2 runs were made per hyper-parameter combination.
 
-| Algorithm  | Best H-P pair $(L, M, Lr)$  | Max Training Accuracy   | Max Val Accuracy | Epoch  |
-|------------|-----------------------------|------------------|-----------------|------------------|
-| Adam-OneCycleLR   | $N/A, 5, 10^{-3}$           | $\mathbf{0.003}$ | $0.000$       | $5$              |
-| Adam-Upd   | $N/A, 5, 10^{-3}$           | $\mathbf{0.003}$ | $0.000$       | $5$              |
-| Adam   | $N/A, 5, 10^{-3}$           | $\mathbf{0.003}$ | $0.000$       | $5$              |
-| SGD+M  | $N/A, 25, 10^{-2}$          | $0.005$          | $0.001$       | $5$              |
-| SGD+M-Upd  | $N/A, 25, 10^{-2}$          | $0.005$          | $0.001$       | $5$              |
-| SGD-Upd  | $N/A, 25, 10^{-2}$          | $0.005$          | $0.001$       | $5$              |
-| S-Rprop  | $N/A, 25, 10^{-2}$          | $0.005$          | $0.001$       | $5$              |
+| Algorithm  | Best H-P pair $(L, M, Lr)$  | Max Training Accuracy (%)  | Max Val Accuracy (%) | Epoch (Tr, Val)  |
+|------------|-----------------------------|----------------------------|----------------------|------------------|
+| Adam-OneCycleLR   | $N/A, 500, 10^{-2}$       | $97$          | $\mathbf{74}$  | $45, 48$  |
+| Adam-Upd          | $25000, 500, 10^{-3}$     | $\mathbf{99}$ | $71$           | $48, 50$  |
+| Adam              | $N/A, 500, 10^{-3}$       | $93$          | $68$           | $46, 49$  |
+| SGD+M             | $N/A, 25, 10^{-2}$        | x       | x        | x       |
+| SGD+M-Upd  | $N/A, 25, 10^{-2}$          | x          | x       | x              |
+| SGD-Upd  | $N/A, 25, 10^{-2}$          | x          | x       | x              |
+| S-Rprop  | $N/A, 25, 10^{-2}$          | x          | x       | x             |
 
 
-*Table 3: Best runs for different optimizers. Using Resnet9 and CIFAR-100.*
+*Table 3: Best runs for different optimizers using Resnet9 and CIFAR-100.*
 
 ### Learning-rate tracking
-A learning-rate tracking functionality was added to the custom optimizers using optimizer class attributes 'lr_mean' and 'lr_std' which are calculated at every iteration of L minibatches, and the iteration of L minibatches is tracked using attribute 'lr_counter'. This enables plotting of the learning-rate mean and standard deviation throughout training. It is activated with an argument: 'track_lr=True' when declaring the optimizer. Unfortunately the standard deviation cannot be automatically added as the standard deviation for the mean plot in wandb. Therefore we do this manually by exporting raw data from wandb as a CSV file and plotting mean with standard deviation in a separate py document.
+A learning-rate tracking functionality was added to the custom optimizers using optimizer class attributes `lr_mean` and `lr_std` which are calculated at every iteration of L minibatches, and the iteration of L minibatches is tracked using attribute `lr_counter`. This enables plotting of the learning-rate mean and standard deviation throughout training. It is activated with an argument: `track_lr=True` when declaring the optimizer. Unfortunately the standard deviation cannot be automatically added as the standard deviation for the mean plot in wandb. Therefore we do this manually by exporting raw data from wandb as a CSV file and plotting mean with standard deviation in a separate py document called LR_plotting.py.
+
+<p float="left">
+  <img title="Validation Loss" alt="Alt text" src="./images/IndiviLR.png" width="500">
+  <img title="Training Loss" alt="Alt text" src="./images/OneCycleLR.png" width="500">
+</p>
+<img title="Validation accuracy" alt="Alt text" src="./images/IndiviLR_2.png" width="500">
+
+These plots show the evolution of the learning rate mean for Adam with OneCycleLR schedule (which has the best validation performance in *Table 3*), and Adam-Upd with the old hyper-parameters for $\eta^{-}, \eta^{+}, \Delta_{min}, \Delta_{max}$ as well as with the newer ones. The data for AdamUpd where $\eta^{-}=0.7375$ was one of the two runs with the optimal hyper-parameter combination from *Table 3*. The data for the last plot with the old $\eta^{-}, \eta^{+}, \Delta_{min}, \Delta_{max}$ values (labeled $\eta^{-}=0.5$, gave a training accuracy of 83%, and validation accuracy 67%. The errorbars are the standard deviations. There are none for the OneCycleLR schedule as this has a globally updated learning rate.
+
+We see that the Rprop learning-rate update scheme can automatically take on the role of a learning-rate scheduler. Changing $\eta^{-}, \eta^{+}$ changes this schedule, and in the plots provided, one can see that when the LR-mean behaviour resembles the OneCycleLR schedule, performance improves.
+
+### Going deeper
+- As per this [paper by Mosca & Magoulas (2015)](https://arxiv.org/abs/1509.04612), Rprop training is delayed when used with the Dropout regularization method. It is not obvious if this problem would persist when using the L-minibatch approximation described in Andersen (2024). If the problem does persist, implementing information of the Dropout mask as in Mosca & Magoulas may accelerate learning and improve overall performance.
