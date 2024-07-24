@@ -1,11 +1,7 @@
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
 import torch
 from torch.optim import Optimizer
 from typing import List, Optional
 from torch import Tensor
-import copy
 import functools
 
 #### This is used as a decorator (I am not quite sure what this is) on the step() method in the custom optimizer
@@ -39,10 +35,24 @@ def _use_grad_for_differentiable(func):
 
 def weight_update(params: List[Tensor],
         grad_list: List[Tensor],
-        step_sizes: List[Tensor]):
+        step_sizes: List[Tensor],
+        weight_decay: float,
+        momentum: float,
+        momentum_buffer_list: List[Optional[Tensor]]):
         for i, param in enumerate(params):
             step_size = step_sizes[i]
             grad = grad_list[i]
+
+            if weight_decay != 0:
+                d_p = d_p.add(param, alpha=weight_decay)
+
+            if momentum != 0:
+                buf = momentum_buffer_list[i]
+                if buf is None:
+                    buf = torch.clone(grad).detach()
+                    momentum_buffer_list[i] = buf
+                else:
+                    buf.mul_(momentum).add_(grad, alpha=1)  # Dampening = 0
 
             param.addcmul_(grad, step_size, value=-1)  # Update weights using individual learning rates and sign of gradient
 
@@ -95,10 +105,12 @@ def Clone_Parameters(model_parameters):
 
 #### Define the custom optimizer
 class SGDUPD(Optimizer):
-    def __init__(self, params, M=1, L=1, lr=1e-2, etas=(0.5, 1.2), lr_limits=(1e-6, 50),
-                 *, track_lr: bool = False, differentiable: bool = False, ):
+    def __init__(self, params, M=1, L=1, lr=1e-2, etas=(0.5, 1.2), lr_limits=(1e-6, 50), momentum=0, \
+                 weight_decay=0, *, track_lr: bool = False, differentiable: bool = False,):
             if not 0.0 <= lr:
                 raise ValueError(f"Invalid learning rate: {lr}")
+            if momentum < 0.0:
+                raise ValueError(f"Invalid momentum value: {momentum}")
             if not 0.0 < etas[0] < 1.0 < etas[1]:
                 raise ValueError(f"Invalid eta values: {etas[0]}, {etas[1]}")
             if not M!=L:
@@ -106,8 +118,8 @@ class SGDUPD(Optimizer):
             if not L%M==0:
                 raise ValueError(f"L={L} must be integer multiple of M={M}")
         #### Make hyperparameters accessible through a dictionary
-            defaults = dict(M=M, L=L, lr=lr, etas=etas, lr_limits=lr_limits,
-                            differentiable=differentiable, track_lr=track_lr)
+            defaults = dict(M=M, L=L, lr=lr, etas=etas, lr_limits=lr_limits, momentum=momentum,
+                            weight_decay=weight_decay, differentiable=differentiable, track_lr=track_lr)
         #### super() makes the class inherit properties from PyTorch's Optimizer class
             super().__init__(params, defaults)
         #### Giving the class attributes that can be accessed later to update learning rates
@@ -140,9 +152,10 @@ class SGDUPD(Optimizer):
                 
         params_with_grad = []
         grad_list = []
+        momentum_buffer_list = []
 
         #### PyTorch has in-built parameter groups which allow you to change hyperparameters for different layers
-        #### In this case all parameters in same group
+        #### This implementation only handles models with one parameter group! (Eg. can't change learning rate by layer)
         
         for group in self.param_groups:
             for p in group['params']:       #### Iterating through layers
@@ -156,6 +169,7 @@ class SGDUPD(Optimizer):
                     
                 grad_list.append(grad)
                 state = self.state[p]
+                momentum_buffer_list.append(state.get('momentum_buffer'))
                 
                 if len(state)==0:       # First time optimizerz is called initialize internal state and track steps
                     state["step"] = 0
@@ -165,13 +179,14 @@ class SGDUPD(Optimizer):
                 state["step"] += 1
             
             L, M = group["L"], group["M"]  # Use L and M hyperparameters
+            momentum, weight_decay = group["momentum"], group["weight_decay"]
             
             if self.data_tally % L == 0 and self.lr_counter == 0:  # First iteration of lr-update on first call
                 self.weights1 = Clone_Parameters(group["params"])   # Save network parameters
                 get_lr_stats(self.step_sizes, self.lr_mean, self.lr_std, group["track_lr"])
                 self.lr_counter += 1
             
-            weight_update(params_with_grad, grad_list, self.step_sizes)  # Update weights, everytime
+            weight_update(params_with_grad, grad_list, self.step_sizes, weight_decay, momentum, momentum_buffer_list)  # Update weights, everytime
             self.data_tally += M   # Add weight mini-batch size to data seen, everytime
             
             if self.data_tally % L == 0 and self.lr_counter == 1:  # Second iteration of lr-update
@@ -191,6 +206,9 @@ class SGDUPD(Optimizer):
                     self.weights1[i] = self.weights2[i].detach().clone()
                     self.weights2[i] = self.weights3[i].detach().clone()
                 self.lr_counter += 1
+
+            for p, momentum_buffer in zip(params_with_grad, momentum_buffer_list):
+                state = self.state[p]
+                state['momentum_buffer'] = momentum_buffer
                     
         return loss
-

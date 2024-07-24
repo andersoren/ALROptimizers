@@ -1,10 +1,7 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import torch
 from torch.optim import Optimizer
 from typing import List, Optional
 from torch import Tensor
-import copy
 import functools
 
 #### This is used as a decorator (I am not quite sure what this is) on the step() method in the custom optimizer
@@ -38,11 +35,17 @@ def _use_grad_for_differentiable(func):
 
 def weight_update(params: List[Tensor],
         grad_list: List[Tensor],
-        step_sizes: List[Tensor]):
+        step_sizes: List[Tensor],
+        weight_decay: float):
         for i, param in enumerate(params):
             step_size = step_sizes[i]
             grad = grad_list[i]
 
+            update = grad.sign()
+
+            if weight_decay != 0:
+                update = update.add(param, alpha=weight_decay)
+                                             
             param.addcmul_(grad.sign(), step_size, value=-1)  # Update weights using individual learning rates and sign of gradient
 
 def lr_update(params: List[Tensor],
@@ -94,7 +97,7 @@ def Clone_Parameters(model_parameters):
 
 #### Define the custom optimizer
 class SRPROP(Optimizer):
-    def __init__(self, params, M=1, L=1, lr=1e-2, etas=(0.5, 1.2), lr_limits=(1e-6, 50),
+    def __init__(self, params, M=1, L=1, lr=1e-2, etas=(0.5, 1.2), lr_limits=(1e-6, 50), weight_decay=0,
                  *, track_lr: bool = False, differentiable: bool = False, ):
             if not 0.0 <= lr:
                 raise ValueError(f"Invalid learning rate: {lr}")
@@ -111,6 +114,7 @@ class SRPROP(Optimizer):
             lr=lr,
             etas=etas,
             lr_limits=lr_limits,
+            weight_decay=weight_decay,
             differentiable=differentiable,
             track_lr=track_lr,)
         #### super() makes the class inherit properties from PyTorch's Optimizer class
@@ -169,17 +173,17 @@ class SRPROP(Optimizer):
                     state["step_size"]  = (grad.new().resize_as_(grad).fill_(group["lr"]))
                     self.step_sizes.append(state["step_size"])
 
-
                 state["step"] += 1
            
             L, M = group["L"], group["M"]  # Use L and M hyperparameters
+            weight_decay = group["weight_decay"]
            
             if self.data_tally % L == 0 and self.lr_counter == 0:  # First iteration of lr-update on first call
                 self.weights1 = Clone_Parameters(group["params"])   # Save network parameters
                 get_lr_stats(self.step_sizes, self.lr_mean, self.lr_std, group["track_lr"])
                 self.lr_counter += 1
            
-            weight_update(params_with_grad, grad_list, self.step_sizes)  # Update weights, everytime
+            weight_update(params_with_grad, grad_list, self.step_sizes, weight_decay)  # Update weights, everytime
             self.data_tally += M   # Add weight mini-batch size to data seen, everytime
            
             if self.data_tally % L == 0 and self.lr_counter == 1:  # Second iteration of lr-update
@@ -202,5 +206,3 @@ class SRPROP(Optimizer):
                 self.lr_counter += 1
                    
         return loss
-
-
