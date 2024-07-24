@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 import Custom_Optimizers
 import numpy as np
 import matplotlib.pyplot as plt
