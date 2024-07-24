@@ -122,6 +122,8 @@ The [best run with Adam](https://jovian.com/tessdja/resnet-practice-cifar100-res
 | SGD-Upd  | $N/A, 25, 10^{-2}$          | x          | x       | x              |
 | S-Rprop  | $N/A, 25, 10^{-2}$          | x          | x       | x             |
 
+In order to see these results in the wandb project called CIFAR-100, I recommend grouping the runs by optimizer --> schedule --> learning_rate --> minibatch_size --> lr_batch_size --> eta_m --> grad_clip --> weight_decay.
+
 
 *Table 3: Best runs for different optimizers using Resnet9 and CIFAR-100.*
 
