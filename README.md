@@ -85,6 +85,10 @@ It was first attempted to reproduce the results in Figure 4 of the paper [The Ro
 
 We moved on to a simpler architecture: ResNet9 (Residual Network with 9 layers). The code is provided in resnet9.py and a visualisation of the architecture is in the images folder.
 
+### Algorithm additions
+
+Weight decay and momentum functionalities were added to the SGD-Upd algorithm and weight decay was added to the S-Rprop algorithm in order to better evaluate these on validation datasets.
+
 ### Potential for optimization: $\eta^-$ and $\eta^+$
 
 For algorithms with the Rprop learning-rate update scheme, hyper-parameters were changed to 
