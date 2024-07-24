@@ -1,6 +1,4 @@
 import Custom_Optimizers
-import numpy as np
-import matplotlib.pyplot as plt
 import torch
 import torchvision
 import torch.optim as optim
@@ -43,12 +41,12 @@ def build_val_dataset(batch_size_val):
                                             batch_size=batch_size_val, shuffle=False)
     return val_loader      
 
-def build_network(arch):
+def build_network(arch, Dropout):
     if arch=="ResNet":
-        network = Custom_Optimizers.ResNet9(in_channels=3, num_classes=100)
+        network = Custom_Optimizers.ResNet9(in_channels=3, num_classes=100, drop_rate=Dropout) # Default Dropout is 0.2
     elif arch=="DenseNet":
         network = Custom_Optimizers.DenseNet(growth_rate=12, block_config=(12,12,12), num_init_features=16, bn_size=1, \
-                                          drop_rate=0, num_classes=100)
+                                          drop_rate=Dropout, num_classes=100)
     else:
         print("Architecture not recognised")
 
@@ -58,17 +56,24 @@ def build_network(arch):
     
     return network.to(device)
 
-def build_optimizer(network, optimizer, learning_rate, minibatch_size, lr_batch_size, eta_m, eta_p, min_lr, max_lr, track_lr):
-    if optimizer == "S-Rprop":
-        optimizer = Custom_Optimizers.SRPROP(network.parameters(), M=minibatch_size, L=lr_batch_size, lr=learning_rate, etas=(eta_m, eta_p), lr_limits=(min_lr, max_lr), track_lr=track_lr)
-    elif optimizer == "SGDUpd":
-        optimizer = Custom_Optimizers.SGDUPD(network.parameters(), M=minibatch_size, L=lr_batch_size, lr=learning_rate, etas=(eta_m, eta_p), lr_limits=(min_lr, max_lr), track_lr=track_lr)
-    elif optimizer == "AdamUpd":
-        optimizer = Custom_Optimizers.ADAMUPD(network.parameters(), M=minibatch_size, L=lr_batch_size, lr=learning_rate, etas=(eta_m, eta_p), lr_limits=(min_lr, max_lr), weight_decay=1e-4, track_lr=track_lr)
-    elif optimizer == "Adam":
-        optimizer = optim.Adam(network.parameters(), lr=learning_rate, weight_decay=1e-4)
-    elif optimizer == "SGD+M":
-        optimizer = optim.SGD(network.parameters(), lr=learning_rate, momentum=0.9, weight_decay= 0.0001, dampening=0)
+def build_optimizer(network, config, eta_m, eta_p, min_lr, max_lr, track_lr):
+    if config["optimizer"] == "S-Rprop":
+        optimizer = Custom_Optimizers.SRPROP(network.parameters(), M=config["minibatch_size"], L=config["lr_batch_size"], \
+                                             lr=config["learning_rate"], etas=(eta_m, eta_p), lr_limits=(min_lr, max_lr), \
+                                              weight_decay=config["weight_decay"], track_lr=track_lr)
+    elif config["optimizer"] == "SGDUpd":
+        optimizer = Custom_Optimizers.SGDUPD(network.parameters(), M=config["minibatch_size"], L=config["lr_batch_size"], \
+                                             lr=config["learning_rate"], etas=(eta_m, eta_p), lr_limits=(min_lr, max_lr), \
+                                              momentum=config["momentum"], weight_decay=config["weight_decay"], track_lr=track_lr)
+    elif config["optimizer"] == "AdamUpd":
+        optimizer = Custom_Optimizers.ADAMUPD(network.parameters(), M=config["minibatch_size"], L=["lr_batch_size"], \
+                                              lr=config["learning_rate"], etas=(eta_m, eta_p), lr_limits=(min_lr, max_lr), \
+                                                weight_decay=config["weight_decay"], track_lr=track_lr)
+    elif config["optimizer"] == "Adam":
+        optimizer = optim.Adam(network.parameters(), lr=config["learning_rate"], weight_decay=config["weight_decay"])
+    elif config["optimizer"] == "SGD":
+        optimizer = optim.SGD(network.parameters(), lr=config["learning_rate"], momentum=config["momentum"], \
+                              weight_decay=config["weight_decay"], dampening=0)
     else:
         print("Optimizer type not recognised")
     return optimizer
@@ -105,7 +110,7 @@ def train_epoch(network, loader, optimizer, epoch, lr_batch_size, track_lr, sche
         
 
 # Default is that learning rates are tracked inside updated algorithms, and no scheduler used nor validation set
-def train(config=None, schedule=False, track_lr=True, val=False):
+def train(config=None, track_lr=False, val=False):
     # Initialize a new wandb run
     run = wandb.init(project="CIFAR-100",
                     config=config)
@@ -122,13 +127,12 @@ def train(config=None, schedule=False, track_lr=True, val=False):
     else:
         val_loader = None
     
-    network = build_network(config["architecture"])
+    network = build_network(config["architecture"], config["Dropout"])
     if config["optimizer"] in ["S-Rprop", "AdamUpd", "SGDUpd"]:
         pass
     else:
         config["lr_batch_size"] = "null"
-    optimizer = build_optimizer(network, config["optimizer"], config["learning_rate"], config["minibatch_size"], \
-                                config["lr_batch_size"], eta_m, eta_p, min_lr, max_lr, track_lr)
+    optimizer = build_optimizer(network, config, eta_m, eta_p, min_lr, max_lr, track_lr)
     
     if config["schedule"] == "None":
         scheduler = config["schedule"]
@@ -157,7 +161,7 @@ def train(config=None, schedule=False, track_lr=True, val=False):
         loader = build_dataset(config["minibatch_size"])
         train_epoch(network, loader, optimizer, epoch, \
                     config["lr_batch_size"], track_lr, config["schedule"], scheduler, grad_clip=config["grad_clip"])
-        if config["schedule"] in ["MultiStep, CosineAnn"]:
+        if config["schedule"] in ["MultiStep", "CosineAnn"]:
             scheduler.step()  
             wandb.log({"Global learning rate": scheduler.get_last_lr()[0], "scheduler_steps": epoch})
         if val:
@@ -181,31 +185,35 @@ def validate(network, val_loader, epoch):
   wandb.log({"Validation loss": val_loss, "Val accuracy": 100. * correct / len(val_loader.dataset), \
              "val_steps": epoch})
 
+###### -----------------------------------------------------------------------
+######                         For making custom runs including validating
 
-learning_rates = [0.001]
-minibatch_sizes = [500]
-lr_batch_size = 25000  # Then try Adam-Upd with M=1000 ? Then move onto SGD+M vanilla & Upd
+learning_rates = [0.0001, 0.001]
+minibatch_sizes = [100]
+lr_batch_size = None
 
 val_batch_size = 5000
 
 for learning_rate in learning_rates:
     for minibatch_size in minibatch_sizes:
         config = {"epochs": 50,
-                "optimizer": "AdamUpd",
+                "optimizer": "SGD",
                 "learning_rate": learning_rate,
                 "minibatch_size": minibatch_size,
                 "lr_batch_size": lr_batch_size,
                 "val_batch_size": val_batch_size,
                 "architecture": "ResNet",
-                "schedule": "None",
-                "grad_clip": False,
-                "weight_decay": 1e-3,
+                "schedule": "None",    # Must be one of: ["MultiStep", "CosineAnn", "OneCycleLR", "None"]
+                "grad_clip": True,
+                "weight_decay": 1e-4,
                 "eta_m": eta_m,
-                "min_lr": min_lr}
+                "min_lr": min_lr,
+                "Dropout": 0.2,
+                "momentum": 0.9}
 
         for j in range(2):
-            ### schedule is only used for Adam and SGD/SGD+M with LR schedulers, tracks learning rates
-            ### track_lr is only used for S-Rprop, Adam-Upd, SGD-Upd
+            ### if a scheduler other than None is used, learning rates automatically tracked
+            ### track_lr is only used for S-Rprop, Adam-Upd, SGD-Upd (must make =True/False manually)
             ### Vanilla SGD+M and Adam have constant learning rates and therefore we do not track them
             ### validation can be used for all of them
-            train(config, schedule=False, track_lr=True, val=True)
+            train(config, track_lr=False, val=True)
