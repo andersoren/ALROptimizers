@@ -117,15 +117,33 @@ The [best run with Adam](https://jovian.com/tessdja/resnet-practice-cifar100-res
 | Adam-OneCycleLR   | $N/A, 500, 10^{-2}$       | $97$          | $\mathbf{74}$  | $45, 48$  |
 | Adam-Upd          | $25000, 500, 10^{-3}$     | $\mathbf{99}$ | $71$           | $48, 50$  |
 | Adam              | $N/A, 500, 10^{-3}$       | $93$          | $68$           | $46, 49$  |
-| SGD+M             | $N/A, 25, 10^{-2}$        | x       | x        | x       |
-| SGD+M-Upd  | $N/A, 25, 10^{-2}$          | x          | x       | x              |
-| SGD-Upd  | $N/A, 25, 10^{-2}$          | x          | x       | x              |
-| S-Rprop  | $N/A, 25, 10^{-2}$          | x          | x       | x             |
+
+*Table 3: Best runs for different Adam-type optimizers using Resnet9 and CIFAR-100.*
+
+For non-Adam algorithms, a grid-search was performed with a wandb sweep (see CIFARsweep.py) with the following parameters:
+
+"optimizer": {"value": "SGD+M"},
+"learning_rate": {"values": [1e-4, 1e-3, 1e-2, 1e-1]},
+"minibatch_size": {"values": [20, 100, 500, 5000]}
+
+"optimizer": {"value": "SGD+M-Upd"},
+"learning_rate": {"values": [1e-4, 1e-3, 1e-2]},
+"minibatch_size": {"values": [20, 100, 500]},
+"lr_batch_size": {"values": [10000, 25000, 50000]}
+
+For these runs, neither dropout nor weight decay were used so as to focus exclusively on training performance. However the data-augmentation sceheme was kept. 
+The best performing set of hyper-parameters in training was then subjected to the validation dataset. 
+
+| Algorithm  | Best H-P pair $(L, M, Lr)$  | Max Training Accuracy (%)  | Max Val Accuracy (%) | Epoch (Tr, Val)  |
+|------------|-----------------------------|----------------------------|----------------------|------------------|
+| SGD+M      | $N/A, 500, 10^{-2}$         | 98%                        | x                    | 50                |
+| SGD+M-Upd  | $N/A, 25, 10^{-2}$          | x                          | x                    | x                |
+| SGD-Upd    | $N/A, 25, 10^{-2}$          | x                          | x                    | x                |
+| S-Rprop    | $N/A, 25, 10^{-2}$          | x                          | x                    | x                |
+
+*Table 4: Best runs for different SGD-type optimizers + S-Rprop using Resnet9 and CIFAR-100.*
 
 In order to see these results in the wandb project called CIFAR-100, I recommend grouping the runs by optimizer --> schedule --> learning_rate --> minibatch_size --> lr_batch_size --> eta_m --> grad_clip --> weight_decay.
-
-
-*Table 3: Best runs for different optimizers using Resnet9 and CIFAR-100.*
 
 ### Learning-rate tracking
 A learning-rate tracking functionality was added to the custom optimizers using optimizer class attributes `lr_mean` and `lr_std` which are calculated at every iteration of L minibatches, and the iteration of L minibatches is tracked using attribute `lr_counter`. This enables plotting of the learning-rate mean and standard deviation throughout training. It is activated with an argument: `track_lr=True` when declaring the optimizer. Unfortunately the standard deviation cannot be automatically added as the standard deviation for the mean plot in wandb. Therefore we do this manually by exporting raw data from wandb as a CSV file and plotting mean with standard deviation in a separate py document called LR_plotting.py.
