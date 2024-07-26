@@ -46,7 +46,7 @@ def weight_update(params: List[Tensor],
             if weight_decay != 0:
                 update = update.add(param, alpha=weight_decay)
                                              
-            param.addcmul_(grad.sign(), step_size, value=-1)  # Update weights using individual learning rates and sign of gradient
+            param.addcmul_(update, step_size, value=-1)  # Update weights using individual learning rates and sign of gradient
 
 def lr_update(params: List[Tensor],
     weights1: Tensor,
@@ -189,7 +189,6 @@ class SRPROP(Optimizer):
             if self.data_tally % L == 0 and self.lr_counter == 1:  # Second iteration of lr-update
                 self.weights2 = Clone_Parameters(group["params"])   # Save network parameters
                 get_lr_stats(self.step_sizes, self.lr_mean, self.lr_std, group["track_lr"])
-                #print(self.step_sizes)
                 self.lr_counter += 1
 
             elif self.data_tally % L == 0 and self.lr_counter >= 2: # Third iteration of lr-update

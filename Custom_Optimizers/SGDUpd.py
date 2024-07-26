@@ -44,7 +44,8 @@ def weight_update(params: List[Tensor],
             grad = grad_list[i]
 
             if weight_decay != 0:
-                d_p = d_p.add(param, alpha=weight_decay)
+                grad = grad.add(param, alpha=weight_decay)
+                # (see https://stackoverflow.com/questions/42704283/l1-l2-regularization-in-pytorch)
 
             if momentum != 0:
                 buf = momentum_buffer_list[i]
@@ -54,7 +55,7 @@ def weight_update(params: List[Tensor],
                 else:
                     buf.mul_(momentum).add_(grad, alpha=1)  # Dampening = 0
 
-            param.addcmul_(grad, step_size, value=-1)  # Update weights using individual learning rates and sign of gradient
+            param.addcmul_(grad, step_size, value=-1)  # Update weights using individual learning rates and gradient
 
 def lr_update(params: List[Tensor],
     weights1: Tensor,
