@@ -127,9 +127,33 @@ For non-Adam algorithms, a grid-search was performed with a wandb sweep (see CIF
 "minibatch_size": {"values": [20, 100, 500, 5000]}
 
 "optimizer": {"value": "SGD+M-Upd"},
-"learning_rate": {"values": [1e-4, 1e-3, 1e-2]},
+"learning_rate": {"values": [1e-3, 1e-2]},
 "minibatch_size": {"values": [20, 100, 500]},
 "lr_batch_size": {"values": [10000, 25000, 50000]}
+
+"optimizer": {"value": "SGD-Upd"},
+"learning_rate": {"values": [1e-4, 1e-3, 1e-2]},
+"minibatch_size": {"values": [20, 100]},
+"lr_batch_size": {"value": 50000}
+
+"optimizer": {"value": "S-Rprop"},
+"learning_rate": {"values": [1e-3, 1e-2]},
+"minibatch_size": {"values": [20, 100, 500, 2500]},
+"lr_batch_size": {"values": [25000, 50000]}
+
+"optimizer": {"value": "Adam-Upd"},
+"learning_rate": {"values": [1e-4, 1e-3, 1e-2]},
+"minibatch_size": {"values": [20, 100, 500, 2500]},
+"lr_batch_size": {"values": [25000, 50000]}
+
+"optimizer": {"value": "Adam"},
+"learning_rate": {"values": [1e-4, 1e-3, 1e-2]},
+"minibatch_size": {"values": [20, 100, 500, 2500]},
+
+"optimizer": {"value": "Adam-Upd"},
+"learning_rate": {"values": [1e-4, 1e-3, 1e-2]},
+"minibatch_size": {"values": [20, 100, 500, 2500]},
+"lr_batch_size": {"values": [25000, 50000]}
 
 For these runs, neither dropout nor weight decay were used so as to focus exclusively on training performance. However the data-augmentation sceheme was kept. 
 The best performing set of hyper-parameters in training was then subjected to the validation dataset. 
