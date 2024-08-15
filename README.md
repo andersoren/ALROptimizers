@@ -40,27 +40,31 @@ New tracking functionality was added to monitor the mean and standard deviation 
 
 ## Future Directions
 
-Future work may involve exploring the effects of Dropout regularization on Rprop training and further optimizing learning-rate parameters for improved model performance.
+Future work may involve exploring the effects of Dropout regularization on training Rprop-like algorithms and further optimizing the adaptive-learning-rate hyper-parameters for improved model performance.
 
 ## Files and Code
 - **`Custom Optimizers` Folder:** Contains custom implementations of modified algorithms:
   - **`SGDUpd.py`**: Custom version of the SGD algorithm incorporating adaptive learning rates.
   - **`AdamUpd.py`**: Custom version of the Adam algorithm with adaptive learning rates.
   - **`S-Rprop.py`**: Implementation of the S-Rprop algorithm.
-
-- **`sweep.py`**: Script for performing Bayesian optimization sweeps to find optimal hyper-parameters.
-
-- **`benchmark.py`**: Contains code for grid-search optimization and benchmarking of different algorithms.
-
-- **`CIFAR.py`**: Handles data processing and augmentation for the CIFAR-100 dataset, including image flipping and resizing.
-
-- **`Densetnet.py`**: Implementation of a DenseNet architecture used for reproducing results on CIFAR-100 (though adjustments were made due to dataset size).
-
+    
+- **`Densetnet.py`**: Implementation of a DenseNet architecture used for reproducing results on CIFAR-100 from the SGD/Adam Schedule-Free paper (though obstacles were met, explained in `WhitePaper.md`).
+- 
 - **`resnet9.py`**: Implementation of the ResNet9 architecture, chosen for testing on CIFAR-100 due to its simplicity and effectiveness.
 
-- **`LR_plotting.py`**: Script for plotting the learning rate mean and standard deviation over training epochs, utilizing data exported from wandb.
+- **`MNIST` Folder:** Contains scripts used with MNIST:
 
-- **`CIFARsweep.py`**: Contains code for performing grid-search sweeps on various optimizers and hyper-parameters for CIFAR-100.
+  - **`sweep.py`**: Script for performing Bayesian optimization sweeps to find optimal hyper-parameters for MNIST dataset.
+  
+  - **`benchmark.py`**: Contains code for benchmarking of different algorithms with pre-selected hyperparameters for MNIST dataset.
+
+- **`CIFAR-100` Folder:** Contains scripts used with CIFAR100:
+
+  - **`CIFARval.py`**: Contains code for benchmarking of different algorithms with pre-selected hyperparameters for CIFAR-100 dataset, training and validation.
+  
+  - **`CIFARsweep.py`**: Contains code for performing grid, random and Bayesian sweeps on various optimizers and hyper-parameters for CIFAR-100.
+ 
+  - **`LR_plotting.py`**: Script for plotting the learning rate mean and standard deviation over training epochs, utilizing data exported from wandb.
 
 
 ## Results
