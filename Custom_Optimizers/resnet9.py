@@ -8,7 +8,7 @@ def conv_block(in_channels, out_channels, pool=False):
     return nn.Sequential(*layers)
 
 class ResNet9(nn.Module):
-    def __init__(self, in_channels, num_classes):
+    def __init__(self, in_channels, num_classes, drop_rate):
         super().__init__()
         # 3 x 32 x 32
         self.conv1 = conv_block(in_channels, 64)         # 64 x 32 x 32
@@ -23,7 +23,7 @@ class ResNet9(nn.Module):
         
         self.classifier = nn.Sequential(nn.MaxPool2d(4), # 512 x 1 x 1
                                         nn.Flatten(),     # 512
-                                        nn.Dropout(0.2),  
+                                        nn.Dropout(drop_rate),  
                                         nn.Linear(512, num_classes)) # 100
         
     def forward(self, xb):

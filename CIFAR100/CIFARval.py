@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 import Custom_Optimizers
 import torch
 import torchvision
@@ -61,17 +63,17 @@ def build_optimizer(network, config, eta_m, eta_p, min_lr, max_lr, track_lr):
         optimizer = Custom_Optimizers.SRPROP(network.parameters(), M=config["minibatch_size"], L=config["lr_batch_size"], \
                                              lr=config["learning_rate"], etas=(eta_m, eta_p), lr_limits=(min_lr, max_lr), \
                                               weight_decay=config["weight_decay"], track_lr=track_lr)
-    elif config["optimizer"] == "SGDUpd":
+    elif config["optimizer"] == "SGDUpd2":
         optimizer = Custom_Optimizers.SGDUPD(network.parameters(), M=config["minibatch_size"], L=config["lr_batch_size"], \
                                              lr=config["learning_rate"], etas=(eta_m, eta_p), lr_limits=(min_lr, max_lr), \
                                               momentum=config["momentum"], weight_decay=config["weight_decay"], track_lr=track_lr)
     elif config["optimizer"] == "AdamUpd":
-        optimizer = Custom_Optimizers.ADAMUPD(network.parameters(), M=config["minibatch_size"], L=["lr_batch_size"], \
+        optimizer = Custom_Optimizers.ADAMUPD(network.parameters(), M=config["minibatch_size"], L=config["lr_batch_size"], \
                                               lr=config["learning_rate"], etas=(eta_m, eta_p), lr_limits=(min_lr, max_lr), \
                                                 weight_decay=config["weight_decay"], track_lr=track_lr)
     elif config["optimizer"] == "Adam":
         optimizer = optim.Adam(network.parameters(), lr=config["learning_rate"], weight_decay=config["weight_decay"])
-    elif config["optimizer"] == "SGD":
+    elif config["optimizer"] == "SGD+M":
         optimizer = optim.SGD(network.parameters(), lr=config["learning_rate"], momentum=config["momentum"], \
                               weight_decay=config["weight_decay"], dampening=0)
     else:
@@ -128,10 +130,6 @@ def train(config=None, track_lr=False, val=False):
         val_loader = None
     
     network = build_network(config["architecture"], config["Dropout"])
-    if config["optimizer"] in ["S-Rprop", "AdamUpd", "SGDUpd"]:
-        pass
-    else:
-        config["lr_batch_size"] = "null"
     optimizer = build_optimizer(network, config, eta_m, eta_p, min_lr, max_lr, track_lr)
     
     if config["schedule"] == "None":
@@ -186,34 +184,36 @@ def validate(network, val_loader, epoch):
              "val_steps": epoch})
 
 ###### -----------------------------------------------------------------------
-######                         For making custom runs including validating
+######                   For making custom runs including validating
 
-learning_rates = [0.0001, 0.001]
-minibatch_sizes = [100]
-lr_batch_size = None
-
+learning_rates = [0.001]
+minibatch_sizes = [500]
+lr_batch_size = 25000
+optimizer = "AdamUpd"
+#SGDUpd2 is without momentum
 val_batch_size = 5000
 
 for learning_rate in learning_rates:
     for minibatch_size in minibatch_sizes:
         config = {"epochs": 50,
-                "optimizer": "SGD",
+                "optimizer": optimizer,
                 "learning_rate": learning_rate,
                 "minibatch_size": minibatch_size,
                 "lr_batch_size": lr_batch_size,
                 "val_batch_size": val_batch_size,
                 "architecture": "ResNet",
                 "schedule": "None",    # Must be one of: ["MultiStep", "CosineAnn", "OneCycleLR", "None"]
-                "grad_clip": True,
-                "weight_decay": 1e-4,
+                "grad_clip": False,
+                "weight_decay": 0.0,
                 "eta_m": eta_m,
                 "min_lr": min_lr,
-                "Dropout": 0.2,
-                "momentum": 0.9}
+                "Dropout": 0.0,
+                "momentum": 0.0,
+                "Validating best runs": True}
 
         for j in range(2):
             ### if a scheduler other than None is used, learning rates automatically tracked
             ### track_lr is only used for S-Rprop, Adam-Upd, SGD-Upd (must make =True/False manually)
             ### Vanilla SGD+M and Adam have constant learning rates and therefore we do not track them
             ### validation can be used for all of them
-            train(config, track_lr=False, val=True)
+            train(config, track_lr=True, val=True)

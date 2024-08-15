@@ -1,6 +1,6 @@
 import torch
 from torch.optim import Optimizer
-from typing import List, Optional
+from typing import List
 from torch import Tensor
 import functools
 
@@ -189,6 +189,7 @@ class SRPROP(Optimizer):
             if self.data_tally % L == 0 and self.lr_counter == 1:  # Second iteration of lr-update
                 self.weights2 = Clone_Parameters(group["params"])   # Save network parameters
                 get_lr_stats(self.step_sizes, self.lr_mean, self.lr_std, group["track_lr"])
+                #print(self.step_sizes)
                 self.lr_counter += 1
 
             elif self.data_tally % L == 0 and self.lr_counter >= 2: # Third iteration of lr-update

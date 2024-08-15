@@ -209,28 +209,3 @@ class DenseNet(nn.Module):
         out = torch.flatten(out, 1)
         out = self.classifier(out)
         return out
-
-# @register_model()
-# @handle_legacy_interface(weights=("pretrained", DenseNet121_Weights.IMAGENET1K_V1))
-# def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
-#     r"""Densenet-121 model from
-#     `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
-
-#     Args:
-#         weights (:class:`~torchvision.models.DenseNet121_Weights`, optional): The
-#             pretrained weights to use. See
-#             :class:`~torchvision.models.DenseNet121_Weights` below for
-#             more details, and possible values. By default, no pre-trained
-#             weights are used.
-#         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
-#         **kwargs: parameters passed to the ``torchvision.models.densenet.DenseNet``
-#             base class. Please refer to the `source code
-#             <https://github.com/pytorch/vision/blob/main/torchvision/models/densenet.py>`_
-#             for more details about this class.
-
-#     .. autoclass:: torchvision.models.DenseNet121_Weights
-#         :members:
-#     """
-#     weights = DenseNet121_Weights.verify(weights)
-
-#     return _densenet(32, (6, 12, 24, 16), 64, weights, progress, **kwargs)

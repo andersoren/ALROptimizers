@@ -1,10 +1,8 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import torch
 from torch import Tensor
 from torch.optim import Optimizer
 from torch.optim.optimizer import _get_value, _dispatch_sqrt, _get_scalar_dtype
-from typing import List, Optional, Union, Tuple
+from typing import List, Union, Tuple
 import functools
 
 #### This is used as a decorator (I am not quite sure what this is) on the step() method in the custom optimizer
@@ -214,7 +212,6 @@ class ADAMUPD(Optimizer):
                     if group['amsgrad']:
                         # Maintains max of all exp. moving avg. of sq. grad. values
                         state['max_exp_avg_sq'] = torch.zeros_like(p, memory_format=torch.preserve_format)
-                    # state["step"] = 0
                     state['step'] = torch.tensor(0.0, dtype=_get_scalar_dtype())
                     # Creating individual learning rates
                     state["step_size"]  = (grad.new().resize_as_(grad).fill_(group["lr"]))
@@ -224,7 +221,6 @@ class ADAMUPD(Optimizer):
                 exp_avg_sqs.append(state['exp_avg_sq'])
                 if group['amsgrad']:
                     max_exp_avg_sqs.append(state['max_exp_avg_sq'])
-                #state["step"] += 1
                 state_steps.append(state['step'])
             
             L, M = group["L"], group["M"]  # Use L and M hyperparameters
@@ -240,7 +236,7 @@ class ADAMUPD(Optimizer):
             adam_update(params_with_grad, grad_list, self.step_sizes, exp_avgs, exp_avg_sqs, 
                         max_exp_avg_sqs, state_steps, amsgrad, beta1, beta2, weight_decay, eps)
             
-            self.data_tally += M   # Add weight mini-batch size to data seen, everytime
+            self.data_tally += M   # Add weight mini-batch size to data seen, everytime M-minibatch
             
             if self.data_tally % L == 0 and self.lr_counter == 1:  # Second iteration of lr-update
                 self.weights2 = Clone_Parameters(group["params"])   # Save network parameters
@@ -261,4 +257,3 @@ class ADAMUPD(Optimizer):
                 self.lr_counter += 1
                     
         return loss
-

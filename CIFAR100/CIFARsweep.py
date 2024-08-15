@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 import Custom_Optimizers
 import torch
 import torchvision
@@ -47,16 +49,16 @@ def build_optimizer(network, config, eta_m, eta_p, min_lr, max_lr):
         optimizer = Custom_Optimizers.SRPROP(network.parameters(), M=config["minibatch_size"], L=config["lr_batch_size"], \
                                              lr=config["learning_rate"], etas=(eta_m, eta_p), lr_limits=(min_lr, max_lr), \
                                               weight_decay=0, track_lr=False)
-    elif config["optimizer"] == "SGDUpd":
+    elif config["optimizer"] == "SGD-Upd":
         optimizer = Custom_Optimizers.SGDUPD(network.parameters(), M=config["minibatch_size"], L=config["lr_batch_size"], \
                                              lr=config["learning_rate"], etas=(eta_m, eta_p), lr_limits=(min_lr, max_lr), \
-                                              momentum=0, weight_decay=0, track_lr=False)
-    elif config["optimizer"] == "AdamUpd":
-        optimizer = Custom_Optimizers.ADAMUPD(network.parameters(), M=config["minibatch_size"], L=["lr_batch_size"], \
+                                             weight_decay=0, track_lr=False)
+    elif config["optimizer"] == "Adam-Upd":
+        optimizer = Custom_Optimizers.ADAMUPD(network.parameters(), M=config["minibatch_size"], L=config["lr_batch_size"], \
                                               lr=config["learning_rate"], etas=(eta_m, eta_p), lr_limits=(min_lr, max_lr), \
                                                 weight_decay=0, track_lr=False)
     elif config["optimizer"] == "Adam":
-        optimizer = optim.Adam(network.parameters(), lr=config["learning_rate"], weight_decay=config["weight_decay"])
+        optimizer = optim.Adam(network.parameters(), lr=config["learning_rate"])
     elif config["optimizer"] == "SGD+M":
         optimizer = optim.SGD(network.parameters(), lr=config["learning_rate"], momentum=0.9, weight_decay=0, dampening=0)
     else:
@@ -113,14 +115,14 @@ def train(config=None):
 ######                   For hyper-parameter sweeps using training only
 
 sweep_config = {
-    "name": "SGD+M",
+    "name": "Adam-Upd",
     "method": "grid",
     "metric": {"goal": "maximize", "name": "Training accuracy"},
     "parameters": {
-        "optimizer": {"value": "SGD+M"},
-        "learning_rate": {"values": [1e-4, 1e-3, 1e-2, 1e-1]},
-        "minibatch_size": {"values": [20, 100, 500, 5000]},
-        #"lr_batch_size": {"value": 0},                          # Change to = 0 if algorithm does not use lr_batch_size
+        "optimizer": {"value": "Adam-Upd"},
+        "learning_rate": {"values": [1e-4, 1e-3, 1e-2]},
+        "minibatch_size": {"values": [20, 100, 500, 2500]},
+        "lr_batch_size": {"values": [25000, 50000]},                          # Change to = 0 if algorithm does not use lr_batch_size
         "epochs": {"value": 50},
     },
 }

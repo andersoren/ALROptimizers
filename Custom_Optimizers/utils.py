@@ -4,7 +4,7 @@ from torch import nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
+import torchvision
 import torch.nn.functional
 
 class CNN(nn.Module):
@@ -12,7 +12,7 @@ class CNN(nn.Module):
         super().__init__()
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-        self.fc1 = nn.Linear(320, 50) 
+        self.fc1 = nn.Linear(320, 50)
         self.fc2 = nn.Linear(50, 10)
 
     def forward(self, x):
@@ -23,9 +23,25 @@ class CNN(nn.Module):
         x = self.fc2(x)
         return F.log_softmax(x)
 
-def Shuffle_MNIST_Data(train_loader, seed):
+def Shuffle_MNIST(train_loader, seed):
     torch.manual_seed(seed)
     
+    indices = torch.randperm(len(train_loader.dataset))
+    
+    # Shuffle data and targets using the same indices
+    train_loader.dataset.data = train_loader.dataset.data[indices]
+    train_loader.dataset.targets = train_loader.dataset.targets[indices]
+
+    return train_loader
+
+def Shuffle_CIFAR(train_loader, seed):
+    torch.manual_seed(seed)
+
+    #print("Targets shape after shuffling:", loader.dataset.targets.shape)
+
+    if isinstance(train_loader.dataset.targets, list):
+        train_loader.dataset.targets = torch.tensor(train_loader.dataset.targets)
+
     indices = torch.randperm(len(train_loader.dataset))
     
     # Shuffle data and targets using the same indices
