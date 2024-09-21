@@ -47,10 +47,8 @@ Future work may involve exploring the effects of Dropout regularization on train
   - **`SGDUpd.py`**: Custom version of the SGD algorithm incorporating adaptive learning rates.
   - **`AdamUpd.py`**: Custom version of the Adam algorithm with adaptive learning rates.
   - **`S-Rprop.py`**: Implementation of the S-Rprop algorithm.
-    
-- **`Densenet.py`**: Implementation of a DenseNet architecture used for reproducing results on CIFAR-100 from the [SGD/Adam Schedule-Free paper](https://arxiv.org/abs/2405.15682) (though obstacles were met, explained in `WhitePaper.md`).
-- 
-- **`resnet9.py`**: Implementation of the ResNet9 architecture, chosen for testing on CIFAR-100 due to its simplicity and effectiveness.
+  - **`Densenet.py`**: Implementation of a DenseNet architecture used for reproducing results on CIFAR-100 from the [SGD/Adam Schedule-Free paper](https://arxiv.org/abs/2405.15682) (though obstacles were met, explained in `WhitePaper.md`).
+  - **`resnet9.py`**: Implementation of the ResNet9 architecture, chosen for testing on CIFAR-100 due to its simplicity and effectiveness.
 
 - **`MNIST` Folder:** Contains scripts used with MNIST:
 
