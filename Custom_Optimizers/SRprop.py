@@ -97,7 +97,7 @@ def Clone_Parameters(model_parameters):
 
 #### Define the custom optimizer
 class SRPROP(Optimizer):
-    def __init__(self, params, M=1, L=1, lr=1e-2, etas=(0.5, 1.2), lr_limits=(1e-6, 50), weight_decay=0,
+    def __init__(self, params, M=1, L=2, lr=1e-2, etas=(0.5, 1.2), lr_limits=(1e-6, 50), weight_decay=0,
                  *, track_lr: bool = False, differentiable: bool = False, ):
             if not 0.0 <= lr:
                 raise ValueError(f"Invalid learning rate: {lr}")
@@ -105,7 +105,7 @@ class SRPROP(Optimizer):
                 raise ValueError(f"Invalid eta values: {etas[0]}, {etas[1]}")
             if not M!=L:
                 raise ValueError(f"For M=L, use Rprop")
-            if not L%M==0:
+            if L%M!=0:
                 raise ValueError(f"L={L} must be integer multiple of M={M}")
         #### Make hyperparameters accessible through a dictionary
             defaults = dict(

@@ -1,5 +1,6 @@
 .MLvenv
 Custom_Optimizers/__pycache__/
+tests/__pycache__/
 TestingImplementations.py
 TestingImplementations.ipynb
 data
