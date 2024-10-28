@@ -28,7 +28,7 @@ pip install -r requirements.txt
 ```
 
 ### 4. Use optimizers as you please
-Edit training loop in `example.py` with custom dataset, architecture and epochs by running in the console
+Edit training loop in `example.py` with custom dataset, architecture and epochs. Then run file in the console:
 ```
 python example.py
 ```
